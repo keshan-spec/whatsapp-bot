@@ -1,0 +1,6 @@
+selenium
+bs4
+numpy
+nltk
+tflearn
+tensorflow
