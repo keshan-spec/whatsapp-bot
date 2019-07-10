@@ -1,4 +1,4 @@
- 
+
 # ----------------------------------------------------------------------
 # author : keshan
 # program descripton : whatsapp bot that auto replies to msgs
@@ -13,6 +13,8 @@ import time
 import threading
 # from bs4 import BeautifulSoup as bs
 
+learn_count = 0
+
 
 class Whatsapp:
     # init method
@@ -21,21 +23,24 @@ class Whatsapp:
         self.driver = webdriver.Chrome(executable_path=chromepath)
         self.driver.get("https://web.whatsapp.com/")
         time.sleep(25)
-        self.target = 'Shehan'
+        self.target = 'Kiron'
         elem = None
-        
+
         while elem is None:
             try:
-                elem = self.driver.find_element_by_xpath('//span[@title="' + self.target + '"]')
+                elem = self.driver.find_element_by_xpath(
+                    '//span[@title="' + self.target + '"]')
             except:
                 self.logout()
 
         ac = ActionChains(self.driver)
         ac.move_to_element(elem).click().perform()
         time.sleep(2)
-        self.layer = self.driver.find_element_by_xpath('//div[@class="_1ays2"]')
+        self.layer = self.driver.find_element_by_xpath(
+            '//div[@class="_1ays2"]')
 
-    # method to logout of the web session if needed call function
+    # method to logout of the web session
+    # if needed call function
     def logout(self):
         ham = self.driver.find_element_by_xpath(
             '//div[@title="Menu"]')
@@ -44,14 +49,34 @@ class Whatsapp:
         ham.find_element_by_xpath(
             '//div[@class="_2hHc6 T6CTG"]/ul[@class="_3z3lc"]/li[@class="_3cfBY _2yhpw _3BqnP"]/div[@title="Log out"]').click()
 
-    # method that returns the last msg sent by the recipient
+    # method that gets any new command/msg sent by the
+    # user and stores it in a text file
+    def learn(self, new_word):
+        global learn_count
+        found = False
+        with open('new_words.txt', 'r+') as f:
+            for line in f:
+                if str(new_word) in line:
+                    print(line)
+                    found = True
+                    break
+
+            if not found:
+                f.write(f'{self.target}-{str(time.ctime())}: {new_word}\n')
+                learn_count += 1
+            else:
+                print("word in list")
+
+    # method that returns the last msg
+    # sent by the recipient
     def get_msg(self):
         no_div = False
         # scrolls to the height of the page
         SCROLL_PAUSE_TIME = 0.5
 
         # Get scroll height
-        last_height = self.driver.execute_script("return document.body.scrollHeight")
+        last_height = self.driver.execute_script(
+            "return document.body.scrollHeight")
 
         while True:
             # Scroll down to bottom
@@ -77,7 +102,7 @@ class Whatsapp:
             return msgs[-1].lower()
         except Exception:
             no_div = True
-        
+
         if no_div:
             try:
                 # gets the list of msgs recieved
@@ -90,8 +115,9 @@ class Whatsapp:
                 print(e)
         else:
             pass
-       
-    # method that gets the msgs and replied to them as programmed
+
+    # method that gets the msgs and replied to
+    # them as programmed
     def chat(self):
         IsNew = False
         # run the class continuosly for each 15 seconds
@@ -100,7 +126,8 @@ class Whatsapp:
             last_msg = self.get_msg()
             print(f"last msg by {self.target}:  "+last_msg)
             # gets all the divs that contains the msgs (in and out)
-            last_reply = [msg.get_attribute('data-pre-plain-text') for msg in self.layer.find_elements_by_xpath("//div[@class='-N6Gq']//div[@class='copyable-text']")]
+            last_reply = [msg.get_attribute('data-pre-plain-text') for msg in self.layer.find_elements_by_xpath(
+                "//div[@class='-N6Gq']//div[@class='copyable-text']")]
             # gets the last div of the above result and splits it to get the target name
             person = last_reply[-1].split(' ')
             # temporary variable
@@ -108,7 +135,7 @@ class Whatsapp:
             # checks if the target name matches the result
             if person[2] == tmp:
                 # if the target matches, then set the new var as true so the program can identify the msg and reply to it
-                # this is used here because to avoid repitive messages being sent 
+                # this is used here because to avoid repitive messages being sent
                 # if the program had replied once then it waits for the next msg to reply
                 IsNew = True
 
@@ -129,18 +156,20 @@ class Whatsapp:
                     reply = '''sorry, i didnt get that. I'm still learning.
                     keshan didnt teach me well.            
                     '''
-                
+                    self.learn(last_msg)
+
                 # find the text box
                 input_box = self.driver.find_element_by_xpath(
-                '//div[@class="_3u328 copyable-text selectable-text"]')
+                    '//div[@class="_3u328 copyable-text selectable-text"]')
                 # focus on it by clicking
                 input_box.click()
                 # send the msg value as the reply
                 input_box.send_keys(reply)
                 # find the send button and click it
-                self.driver.find_element_by_xpath('//span[@data-icon="send"]').click()
+                self.driver.find_element_by_xpath(
+                    '//span[@data-icon="send"]').click()
                 # once the msg is sent . clear the text box
-                # to avoid old msgs being sent 
+                # to avoid old msgs being sent
                 input_box.clear()
             else:
                 print("\nYou replied last")
@@ -153,3 +182,4 @@ class Whatsapp:
 if __name__ == '__main__':
     bot = Whatsapp()
     bot.chat()
+    print(f"New messages : {learn_count}")
