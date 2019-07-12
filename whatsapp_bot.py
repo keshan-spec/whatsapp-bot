@@ -11,31 +11,51 @@ from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import time
 import threading
-# from bs4 import BeautifulSoup as bs
+import json
+import random
+import re
 
 learn_count = 0
-
+no_reply =   [
+    "sorry, i didnt get that. I'm still learning. ",
+    "keshan didnt teach me well. ",
+    "excuse me?",
+    "i didnt get that",
+    "english pleasee?"
+]
 
 class Whatsapp:
     # init method
     def __init__(self):
+        # the path to the chromedriver executable 
         chromepath = r'C:\webdrivers\chromedriver'
         self.driver = webdriver.Chrome(executable_path=chromepath)
         self.driver.get("https://web.whatsapp.com/")
         time.sleep(25)
-        self.target = 'Kiron'
+        # the recipient
+        self.target = 'Bro'
         elem = None
+        
+        # open and load the intents json file that has the chat patterns and replies
+        with open('intents.json') as f:
+            self.data = json.load(f)
 
+        # search for the target in the contact list
         while elem is None:
             try:
                 elem = self.driver.find_element_by_xpath(
                     '//span[@title="' + self.target + '"]')
             except:
+                # if the target is not found logout
+                print("Target not found!")
                 self.logout()
+                break
 
         ac = ActionChains(self.driver)
+        # move to the target span and click it
         ac.move_to_element(elem).click().perform()
         time.sleep(2)
+        # the chat div that has all the msgs
         self.layer = self.driver.find_element_by_xpath(
             '//div[@class="_1ays2"]')
 
@@ -120,7 +140,7 @@ class Whatsapp:
     # them as programmed
     def chat(self):
         IsNew = False
-        # run the class continuosly for each 15 seconds
+        # run the class continuosly for each 10 seconds
         threading.Timer(10, self.chat).start()
         try:
             last_msg = self.get_msg()
@@ -142,21 +162,21 @@ class Whatsapp:
             # if the last msg was sent or recieved
             # will run only if the last msg is recieved
             if IsNew:
-                if last_msg == 'hello':
-                    reply = f'hey {self.target}'
-                elif last_msg == 'whats up':
-                    reply = "Nothing much. What about you?"
-                elif last_msg == 'bye':
-                    reply = f'okay bye {self.target}'
-                elif last_msg == 'whats ur name':
-                    reply = "I'm keshan's bot. Nice to meet you!"
-                elif last_msg == 'i love you':
-                    reply = "Aww. I love you too"
-                else:
-                    reply = '''sorry, i didnt get that. I'm still learning.
-                    keshan didnt teach me well.            
-                    '''
-                    self.learn(last_msg)
+                # using the data in the json file open
+                # check in each pattern if the entered msg exists
+                # if it does, then choose a random reply and send it
+                for i in self.data["intents"]:
+                    for pattern in i["patterns"]:
+                        # using regex to match the exact sentence 
+                        if re.findall(r'^({}\s*)$'.format(last_msg), pattern, re.M):
+                            reply = random.choice(i["responses"])
+                            print(reply)
+                        else:
+                            # from the list of words that come in handy when the bot cant process 
+                            # or find what the recipient said
+                            reply = random.choice(no_reply)
+                            # add the new word to the txt file
+                            self.learn(last_msg)
 
                 # find the text box
                 input_box = self.driver.find_element_by_xpath(
@@ -172,14 +192,18 @@ class Whatsapp:
                 # to avoid old msgs being sent
                 input_box.clear()
             else:
-                print("\nYou replied last")
+                print("You replied last")
 
         except Exception as e:
             print(f"Error : {e}")
+            self.logout()
+
+
 
 
 # create instance of class
 if __name__ == '__main__':
     bot = Whatsapp()
     bot.chat()
-    print(f"New messages : {learn_count}")
+
+print(f"New messages : {learn_count}")
