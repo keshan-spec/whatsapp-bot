@@ -10,6 +10,7 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import time
+import sys
 import threading
 import json
 import random
@@ -33,14 +34,14 @@ no_reply = [
 
 class Whatsapp:
     # init method
-    def __init__(self):
+    def __init__(self, target):
         # the path to the chromedriver executable
         chromepath = r'C:\webdrivers\chromedriver'
         self.driver = webdriver.Chrome(executable_path=chromepath)
         self.driver.get("https://web.whatsapp.com/")
         time.sleep(25)
         # the recipient
-        self.target = 'Sharaf'
+        self.target = target
         elem = None
 
         # search for the target in the contact list
@@ -134,9 +135,9 @@ class Whatsapp:
 
             # gets the list of emojis recieved
             # ! EMOJI MESSAGES
-            emojis = [emoji for emoji in self.layer.find_elements_by_xpath(
-                "//div[@class='_1zGQT _2ugFP message-in']//img[@class='_298rb _2FANH selectable-text invisible-space copyable-text']")]
-            print(emoji.demojize(emojis))
+            emojis = [emoji.get_attribute('data-plain-text') for emoji in self.layer.find_elements_by_xpath(
+                "//div[@class='_1zGQT _2ugFP message-in']//img[@class='b75 emoji wa selectable-text invisible-space copyable-text']")]
+            print(emoji.demojize(emojis[-1]))
 
         except Exception:
             no_div = True
@@ -153,9 +154,9 @@ class Whatsapp:
 
                 # gets the list of emojis recieved
                 # ! EMOJI MESSAGES
-                emojis = [emoji for emoji in self.layer.find_elements_by_xpath(
-                    "//div[@class='_1zGQT _2ugFP message-in']//img[@class='_298rb _2FANH selectable-text invisible-space copyable-text']")]
-                print(emoji.demojize(emojis))
+                emojis = [emoji.get_attribute('data-plain-text') for emoji in self.layer.find_elements_by_xpath(
+                    "//div[@class='_1zGQT _2ugFP message-in']//img[@class='b75 emoji wa selectable-text invisible-space copyable-text']")]
+                print(emoji.demojize(emojis[-1]))
 
             except Exception as e:
                 print(e)
@@ -211,16 +212,17 @@ class Whatsapp:
         threading.Timer(10, self.chat).start()
         try:
             last_msg = self.get_msg()
-            print(f"last msg by {self.target}:  "+last_msg)
+            print(f"last msg by {self.target}:  {last_msg}")
             # gets all the divs that contains the msgs (in and out)
             last_reply = [msg.get_attribute('data-pre-plain-text') for msg in self.layer.find_elements_by_xpath(
                 "//div[@class='-N6Gq']//div[@class='copyable-text']")]
             # gets the last div of the above result and splits it to get the target name
-            person = last_reply[-1].split(' ')
-            # temporary variable
-            tmp = self.target+':'
+            person = last_reply[-1].split(']')
+            person = person[1].split(':')
+            person = person[0].strip()
+
             # checks if the target name matches the result
-            if person[2] == tmp:
+            if person == self.target:
                 # if the target matches, then set the new var as true so the program can identify the msg and reply to it
                 # this is used here because to avoid repitive messages being sent
                 # if the program had replied once then it waits for the next msg to reply
@@ -247,10 +249,11 @@ class Whatsapp:
         except Exception as e:
             print(f"Error : {e}\n\n")
             print(f"New messages : {learn_count}")
-            self.logout()
+            pass
 
 
 # create instance of class
 if __name__ == '__main__':
-    bot = Whatsapp()
+    target = input("Enter target name: ")
+    bot = Whatsapp(target)
     bot.chat()
