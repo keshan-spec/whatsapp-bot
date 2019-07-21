@@ -40,7 +40,7 @@ class Whatsapp:
         self.driver.get("https://web.whatsapp.com/")
         time.sleep(25)
         # the recipient
-        self.target = 'Bro'
+        self.target = 'Sharaf'
         elem = None
 
         # search for the target in the contact list
@@ -210,7 +210,7 @@ class Whatsapp:
         # run the class continuosly for each 10 seconds
         threading.Timer(10, self.chat).start()
         try:
-            last_msg = self.get_msg().lower()
+            last_msg = self.get_msg()
             print(f"last msg by {self.target}:  "+last_msg)
             # gets all the divs that contains the msgs (in and out)
             last_reply = [msg.get_attribute('data-pre-plain-text') for msg in self.layer.find_elements_by_xpath(
