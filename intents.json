@@ -75,8 +75,14 @@
     },
     {
       "tag": "instructions",
-      "patterns": ["do u get it?", "okay", "can u call me", "call me"],
+      "patterns": ["do u get it?", "can u call me", "call me"],
       "responses": ["yes", "yep", "ya", "sure", "ok", "alright"],
+      "context_set": ""
+    },
+    {
+      "tag": "casual",
+      "patterns": ["okay", "mm", "ok"],
+      "responses": ["okay", "mhm", "ok", "alright"],
       "context_set": ""
     }
   ]
