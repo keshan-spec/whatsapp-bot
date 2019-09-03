@@ -15,7 +15,8 @@ chromepath = r'C:\webdrivers\chromedriver'
 ## Intents.json
 
 ```
-The intents.json file contains the json data of a set of conversation types with patters and responses for each. These contents can be modifed as wanted. ***BUT CHANGES MUST BE RELATIVE TO THE DATA***
+The intents.json file contains the json data of a set of conversation types with patters and responses for each.
+ These contents of the patterns and responses can be modifed as wanted. 
 ```
 
 ## New words
