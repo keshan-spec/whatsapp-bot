@@ -1,37 +1,31 @@
-
 # ----------------------------------------------------------------------
 # author : keshan
-# program descripton : whatsapp bot that auto replies to msgs
+# program description : whatsapp bot that auto replies to msgs
 # date : 03:11PM on June 27, 2019
 # ----------------------------------------------------------------------
 
 from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.action_chains import ActionChains
 import time
-import sys
 import threading
 import json
 import random
 import re
-import emoji
+
 
 # Global variables
 learn_count = 0
 no_reply = [
-    "sorry, i didnt get that. I'm still learning. ",
-    "keshan didnt teach me well. ",
-    "excuse me?",
-    "i didnt get that",
-    "english pleasee?"
+    "sorry, i didn't get that. I'm still learning. ",
+    "keshan didn't teach me well. ",
+    "I didn't get that",
+    "I only understand english",
+    "I'm still a noob, please ease up on me :("
 ]
 
 
 #  TODO : Handle multiple messages, improve replies accuracy
 # ? Need to find a way to be able to get multiple user inputs
-
-
 class Whatsapp:
     # init method
     def __init__(self, target):
@@ -59,9 +53,12 @@ class Whatsapp:
         # move to the target span and click it
         ac.move_to_element(elem).click().perform()
         time.sleep(2)
+        print(f"Found target...")
         # the chat div that has all the msgs
         self.layer = self.driver.find_element_by_xpath(
             '//div[@class="_1ays2"]')
+        time.sleep(5)
+        self.send_msg(f"Hello {self.target}")
 
     # method to logout of the web session
     # if needed call function
@@ -125,49 +122,33 @@ class Whatsapp:
             last_height = new_height
 
         try:
-            # gets the list of msgs recieved
-            # ! SINGLE MESSAGE
+            # gets the list of msgs received
+            # This gets the base message of every group of messages [the very last message]
             msgs = [msg.text for msg in self.layer.find_elements_by_xpath(
-                "//div[@class='_1zGQT _2ugFP message-in tail']//span[@class='selectable-text invisible-space copyable-text']")]
-            # print(msgs)
+                "//div[@class='FTBzM message-in']//span[@class='_F7Vk selectable-text invisible-space copyable-text']")]
+            print(f"Base messages : {msgs[-1]}")
+
+            # This gets all the messages sent continuously
+            # TODO : Find a way to make use of this and link the messages to it's base message
+            multiple_msgs = [msg.text for msg in self.layer.find_elements_by_xpath(
+                "//div[@class='FTBzM _4jEk2 message-in']//span[@class='_F7Vk selectable-text invisible-space copyable-text']")]
+            print(f"Multiple messages : {multiple_msgs[-2:]}")
+
             # returns the last index of the list result
             return msgs[-1].lower()
-
-            # gets the list of emojis recieved
-            # ! EMOJI MESSAGES
-            emojis = [emoji.get_attribute('data-plain-text') for emoji in self.layer.find_elements_by_xpath(
-                "//div[@class='_1zGQT _2ugFP message-in']//img[@class='b75 emoji wa selectable-text invisible-space copyable-text']")]
-            print(emoji.demojize(emojis[-1]))
-
-        except Exception:
-            no_div = True
-
-        if no_div:
-            try:
-                # gets the list of msgs recieved
-                # ! MUTIPLE MESSAGES
-                msgs = [msg.text for msg in self.layer.find_elements_by_xpath(
-                    "//div[@class='_1zGQT _2ugFP message-in']//span[@class='selectable-text invisible-space copyable-text']")]
-                # print(msgs)
-                # returns the last index of the list result
-                return msgs[-1]
-
-                # gets the list of emojis recieved
-                # ! EMOJI MESSAGES
-                emojis = [emoji.get_attribute('data-plain-text') for emoji in self.layer.find_elements_by_xpath(
-                    "//div[@class='_1zGQT _2ugFP message-in']//img[@class='b75 emoji wa selectable-text invisible-space copyable-text']")]
-                print(emoji.demojize(emojis[-1]))
-
-            except Exception as e:
-                print(e)
-        else:
+        except Exception as e:
+            print(f"Message error : {e}")
             pass
 
+        return None
+
     # searches through the json file for a reply suitable for the sent msg
-    # returns and empty list if no replies are avaialable
-    # TODO : Test accuracy and how long/Fast it can hanle the user input
+    # returns and empty list if no replies are available
+    # TODO : Test accuracy and how long/Fast it can handle the user input
     @staticmethod
     def reply_msg(msg):
+        if msg:
+            msg = msg.lower().strip()
         # open and load the intents json file that has the chat patterns and replies
         with open('intents.json') as f:
             data = json.load(f)
@@ -180,12 +161,11 @@ class Whatsapp:
                 if re.findall(r'^({0}\s*)$'.format(msg), pattern, re.M):
                     # choose a random msg
                     reply = random.choice(i["responses"])
-                    print(reply)
                     # return the reply msg
                     return reply
 
     # this method finds the input box and send button
-    # gets the msg recieved from the param and sends it
+    # gets the msg received from the param and sends it
     # TODO : Crashes ( for a short period of seconds ) if 2 messages are sent at once.
     def send_msg(self, msg):
         # find the text box
@@ -208,11 +188,12 @@ class Whatsapp:
     def chat(self):
         reply = ''
         IsNew = False
-        # run the class continuosly for each 10 seconds
+        # run the method continuously for every 10 seconds
         threading.Timer(10, self.chat).start()
         try:
             last_msg = self.get_msg()
-            print(f"last msg by {self.target}:  {last_msg}")
+            if last_msg:
+                print(f"Last msg by {self.target}:  {last_msg}")
             # gets all the divs that contains the msgs (in and out)
             last_reply = [msg.get_attribute('data-pre-plain-text') for msg in self.layer.find_elements_by_xpath(
                 "//div[@class='-N6Gq']//div[@class='copyable-text']")]
@@ -223,9 +204,9 @@ class Whatsapp:
 
             # checks if the target name matches the result
             if person == self.target:
-                # if the target matches, then set the new var as true so the program can identify the msg and reply to it
-                # this is used here because to avoid repitive messages being sent
-                # if the program had replied once then it waits for the next msg to reply
+                # if the target matches, then set the new var as true so the program can identify the msg and reply
+                # to it this is used here because to avoid repetitive messages being sent if the program had replied
+                # once then it waits for the next msg to reply
                 IsNew = True
 
             # if the last msg was sent or recieved
@@ -243,11 +224,8 @@ class Whatsapp:
                     self.send_msg(random.choice(no_reply))
                     # add the new word to the txt file
                     self.learn(last_msg)
-            else:
-                print("You replied last")
-
         except Exception as e:
-            print(f"Error : {e}\n\n")
+            print(f"\nError : {e}\n")
             print(f"New messages : {learn_count}")
             pass
 
