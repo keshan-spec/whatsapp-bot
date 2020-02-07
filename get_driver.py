@@ -38,9 +38,9 @@ def get_platform():
 # checks for driver
 # if it doesn't exist downloads it
 # respective to the os in the current dir inside /driver/chromedriver.exe
-def check(wdriver):
+def check(wdriver=CHROMEPATHW):
     if os.path.exists(wdriver):
-        return wdriver
+        return wdriver+"chromedriver"
     if not os.path.exists("driver"):
         os.mkdir("driver")
         filename = wget.download(url=get_download(get_platform()), out="driver/chromedriver.zip")
@@ -50,9 +50,9 @@ def check(wdriver):
         os.remove(filename)
         return filename
 
-    return wdriver
+    return None
 
 
 if __name__ == "__main__":
-    res = check(CHROMEPATHW)
+    res = check()
     print(res)

@@ -11,7 +11,7 @@ import threading
 import json
 import random
 import re
-
+from get_driver import check
 
 # Global variables
 learn_count = 0
@@ -30,7 +30,8 @@ class Whatsapp:
     # init method
     def __init__(self, target):
         # the path to the chromedriver executable
-        chromepath = r'C:\webdrivers\chromedriver'
+        path = check()
+        chromepath = path if path else 'C:\\webdrivers\\chromedriver'
         self.driver = webdriver.Chrome(executable_path=chromepath)
         self.driver.get("https://web.whatsapp.com/")
         time.sleep(25)
@@ -79,7 +80,7 @@ class Whatsapp:
         global learn_count
         found = False
         # open the new text file to store the new words
-        with open('new_words.txt', 'r+') as f:
+        with open('src/new_words.txt', 'r+') as f:
             for line in f:
                 # check if the word already exists in the file
                 # to avoid duplication
@@ -150,7 +151,7 @@ class Whatsapp:
         if msg:
             msg = msg.lower().strip()
         # open and load the intents json file that has the chat patterns and replies
-        with open('intents.json') as f:
+        with open('src/intents.json') as f:
             data = json.load(f)
         # using the data in the json file open
         # check in each pattern if the entered msg exists
